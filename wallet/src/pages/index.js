@@ -88,16 +88,16 @@ export default function Home() {
     const amount = data.Amount;
     // const TOKEN_CONTRACT_ADDRESS = "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357";  //tokenA sepolia
     // const TOKEN_CONTRACT_ADDRESS = "0xB41eEF0479A7738Ff2081E5093D27C46B99a3f0f";   //dai bsc
-    const TOKEN_CONTRACT_ADDRESS = "0x52D800ca262522580CeBAD275395ca6e7598C014";   //usdc polygon
-    const GAS_LIMIT = 200000; 
+    const TOKEN_CONTRACT_ADDRESS = "0x52D800ca262522580CeBAD275395ca6e7598C014"; //usdc polygon
+    // const GAS_LIMIT = 600000;
     try {
       // const providerUrl =
       //   "https://eth-sepolia.g.alchemy.com/v2/50W0dopDqqG_hk-7jyz3EKN2cmdX5lGm";
-        // const providerUrl =
-        // "https://cold-dry-dinghy.bsc-testnet.quiknode.pro/c441a412e8ea270ed3810b2a1970193f05992a49/";
-        const providerUrl =
+      // const providerUrl =
+      // "https://cold-dry-dinghy.bsc-testnet.quiknode.pro/c441a412e8ea270ed3810b2a1970193f05992a49/";
+      const providerUrl =
         "https://polygon-mumbai.g.alchemy.com/v2/yXUomCqFj5CkVZCa6fn6KoZSJnJIlBX5";
-        
+
       const provider = new ethers.providers.JsonRpcProvider(providerUrl);
       const wallet = new ethers.Wallet(privateKey, provider);
 
@@ -114,12 +114,15 @@ export default function Home() {
         wallet
       );
 
+      const balance = await tokenContract.balanceOf(fromAddress);
+      console.log("Token balance:", ethers.utils.formatEther(balance));
+
       const transaction = await tokenContract.transfer(
         toAddress,
         ethers.utils.parseEther(amount),
-        {
-          gasLimit: GAS_LIMIT,
-        }
+        // {
+        //   gasLimit: GAS_LIMIT,
+        // }
       );
       await transaction.wait();
       console.log("Token transfer successful!");
@@ -134,7 +137,7 @@ export default function Home() {
       <form className="max-w-sm mx-auto" onSubmit={handleSubmit}>
         <div className="mb-5">
           <label
-            for="large-input"
+            htmlFor="large-input"
             className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
           >
             From Address
@@ -151,7 +154,7 @@ export default function Home() {
         </div>
         <div className="mb-5">
           <label
-            for="large-input"
+            htmlFor="large-input"
             className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
           >
             From Address Private Key
@@ -160,7 +163,7 @@ export default function Home() {
             type="text"
             id="large-input"
             name="fromAddressPrivateKey"
-            placeholder="Enter From Address"
+            placeholder="Enter From Address Private Key"
             value={data.fromAddressPrivateKey}
             onChange={handleChange}
             className="block w-full p-4 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
@@ -168,7 +171,7 @@ export default function Home() {
         </div>
         <div className="mb-5">
           <label
-            for="large-input"
+            htmlFor="large-input"
             className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
           >
             To Address
@@ -185,7 +188,7 @@ export default function Home() {
         </div>
         <div className="mb-5">
           <label
-            for="large-input"
+            htmlFor="large-input"
             className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
           >
             Amount
@@ -201,7 +204,7 @@ export default function Home() {
           />
         </div>
         <label
-          for="countries"
+          htmlFor="countries"
           className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
         >
           Select an option
@@ -213,7 +216,7 @@ export default function Home() {
           onChange={handleChange}
           className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-4 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
         >
-          <option selected>Select Token</option>
+          <option defaultValue="Select Token">Select Token</option>
           <option value="b4b">b4b</option>
           <option value="b4re">b4re</option>
           <option value="b4rc">b4rc</option>
@@ -223,7 +226,7 @@ export default function Home() {
         <div className="w-full flex items-center justify-center mt-4">
           <button
             type="submit"
-            class="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
+            className="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
           >
             Transfer Token
           </button>
