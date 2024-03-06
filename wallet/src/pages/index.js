@@ -18,6 +18,7 @@ export default function Home() {
   const [defaultAccount, setDefaultAccount] = useState(null);
   const [userBalance, setUserBalance] = useState(null);
   const [show, setShow] = useState(false);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const [data, setData] = useState({
@@ -71,28 +72,34 @@ export default function Home() {
     setShow(true);
     return;
   };
+
   const tokenAddresses = {
     b4b: {
       address: "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357",
-      rpcUrl: "https://eth-sepolia.g.alchemy.com/v2/50W0dopDqqG_hk-7jyz3EKN2cmdX5lGm",
+      rpcUrl:
+        "https://eth-sepolia.g.alchemy.com/v2/50W0dopDqqG_hk-7jyz3EKN2cmdX5lGm",
     },
     b4re: {
       address: "0xB41eEF0479A7738Ff2081E5093D27C46B99a3f0f",
-      rpcUrl: "https://cold-dry-dinghy.bsc-testnet.quiknode.pro/c441a412e8ea270ed3810b2a1970193f05992a49/",
+      rpcUrl:
+        "https://cold-dry-dinghy.bsc-testnet.quiknode.pro/c441a412e8ea270ed3810b2a1970193f05992a49/",
     },
     b4rc: {
       address: "0x52D800ca262522580CeBAD275395ca6e7598C014",
-      rpcUrl: "https://polygon-mumbai.g.alchemy.com/v2/yXUomCqFj5CkVZCa6fn6KoZSJnJIlBX5",
+      rpcUrl:
+        "https://polygon-mumbai.g.alchemy.com/v2/yXUomCqFj5CkVZCa6fn6KoZSJnJIlBX5",
     },
     matic: {
       address: "0xA0BAfe3Fbb65D440f33248d243Ed21628655406C",
-      rpcUrl: "https://eth-sepolia.g.alchemy.com/v2/50W0dopDqqG_hk-7jyz3EKN2cmdX5lGm",
+      rpcUrl:
+        "https://eth-sepolia.g.alchemy.com/v2/50W0dopDqqG_hk-7jyz3EKN2cmdX5lGm",
     },
   };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setData((prevData) => ({ ...prevData, [name]: value }));
-  
+
     if (tokenAddresses[value]) {
       const { address, rpcUrl } = tokenAddresses[value];
       setData((prevData) => ({
@@ -126,9 +133,10 @@ export default function Home() {
     // const TOKEN_CONTRACT_ADDRESS = "0x52D800ca262522580CeBAD275395ca6e7598C014"; //usdc polygon
     // const GAS_LIMIT = 600000;
     const TOKEN_CONTRACT_ADDRESS = data.TOKEN_CONTRACT_ADDRESS;
-    console.log("token Address-------",data.TOKEN_CONTRACT_ADDRESS);
-    console.log("rpc---------",data.RPC_URL);
+    console.log("token Address-------", data.TOKEN_CONTRACT_ADDRESS);
+    console.log("rpc---------", data.RPC_URL);
     try {
+      setLoading(true);
       // const providerUrl =
       //   "https://eth-sepolia.g.alchemy.com/v2/50W0dopDqqG_hk-7jyz3EKN2cmdX5lGm";
       // const providerUrl =
@@ -175,10 +183,13 @@ export default function Home() {
         Amount: "",
         Token: "",
       });
+      setLoading(false);
     } catch (error) {
       console.error("Token transfer error:", error);
       toast.error("Token Transfer Error");
       setShow(false);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -280,14 +291,110 @@ export default function Home() {
         </select>
         <div>{errorMessage && errorMessage}</div>
         <div className="w-full flex items-center justify-center mt-4">
-          <button
+          {/* <button
             type="submit"
             className="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
           >
             Transfer Token
-          </button>
+          </button> */}
+          {loading ? (
+            <div
+              aria-label="Loading..."
+              role="status"
+              className="flex items-center space-x-2"
+            >
+              <svg
+                className="h-20 w-20 animate-spin stroke-gray-500"
+                viewBox="0 0 256 256"
+              >
+                <line
+                  x1="128"
+                  y1="32"
+                  x2="128"
+                  y2="64"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="24"
+                ></line>
+                <line
+                  x1="195.9"
+                  y1="60.1"
+                  x2="173.3"
+                  y2="82.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="24"
+                ></line>
+                <line
+                  x1="224"
+                  y1="128"
+                  x2="192"
+                  y2="128"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="24"
+                ></line>
+                <line
+                  x1="195.9"
+                  y1="195.9"
+                  x2="173.3"
+                  y2="173.3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="24"
+                ></line>
+                <line
+                  x1="128"
+                  y1="224"
+                  x2="128"
+                  y2="192"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="24"
+                ></line>
+                <line
+                  x1="60.1"
+                  y1="195.9"
+                  x2="82.7"
+                  y2="173.3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="24"
+                ></line>
+                <line
+                  x1="32"
+                  y1="128"
+                  x2="64"
+                  y2="128"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="24"
+                ></line>
+                <line
+                  x1="60.1"
+                  y1="60.1"
+                  x2="82.7"
+                  y2="82.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="24"
+                ></line>
+              </svg>
+              <span className="text-4xl font-medium text-gray-500">Loading...</span>
+            </div>
+          ) : (
+            <button
+              type="submit"
+              className="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
+            >
+              Transfer Token
+            </button>
+          )}
         </div>
       </form>
+      {/* <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-gray-800 bg-opacity-75">
+              <CircularProgress color="primary" />
+            </div> */}
 
       {show && (
         <>
