@@ -5,10 +5,14 @@ import { ethers } from "ethers";
 import { useRouter } from "next/router";
 import Model from "@/components/Model";
 import Header from "@/components/Header";
+// import ABI from "./abi/sepoliatoken.json";
+// import ABI from "./abi/bnbtoken.json";
+import ABI from "./abi/polygontoken.json";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
+  // console.log("ABI: ",ABI);
   const [errorMessage, setErrorMessage] = useState(null);
   const [defaultAccount, setDefaultAccount] = useState(null);
   const [userBalance, setUserBalance] = useState(null);
@@ -18,6 +22,7 @@ export default function Home() {
   const [data, setData] = useState({
     toAddress: "",
     fromAddress: "",
+    fromAddressPrivateKey: "",
     Amount: "",
     Token: "",
   });
@@ -61,7 +66,7 @@ export default function Home() {
   //tranfer token amount here...
   const handleSubmit = (event) => {
     event.preventDefault();
-    console.log("runned", data);
+    console.log("Form data------", data);
     setShow(true);
     return;
   };
@@ -72,6 +77,55 @@ export default function Home() {
 
   const handleModel = () => {
     setShow(false);
+  };
+
+  const transferToken = async () => {
+    console.log("Form data in transfer token function------", data);
+    const token = data.Token;
+    const toAddress = data.toAddress;
+    const fromAddress = data.fromAddress;
+    const privateKey = data.fromAddressPrivateKey;
+    const amount = data.Amount;
+    // const TOKEN_CONTRACT_ADDRESS = "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357";  //tokenA sepolia
+    // const TOKEN_CONTRACT_ADDRESS = "0xB41eEF0479A7738Ff2081E5093D27C46B99a3f0f";   //dai bsc
+    const TOKEN_CONTRACT_ADDRESS = "0x52D800ca262522580CeBAD275395ca6e7598C014";   //usdc polygon
+    const GAS_LIMIT = 200000; 
+    try {
+      // const providerUrl =
+      //   "https://eth-sepolia.g.alchemy.com/v2/50W0dopDqqG_hk-7jyz3EKN2cmdX5lGm";
+        // const providerUrl =
+        // "https://cold-dry-dinghy.bsc-testnet.quiknode.pro/c441a412e8ea270ed3810b2a1970193f05992a49/";
+        const providerUrl =
+        "https://polygon-mumbai.g.alchemy.com/v2/yXUomCqFj5CkVZCa6fn6KoZSJnJIlBX5";
+        
+      const provider = new ethers.providers.JsonRpcProvider(providerUrl);
+      const wallet = new ethers.Wallet(privateKey, provider);
+
+      if (
+        !ethers.utils.isAddress(toAddress) ||
+        !ethers.utils.isAddress(fromAddress)
+      ) {
+        throw new Error("Invalid Ethereum address");
+      }
+
+      const tokenContract = new ethers.Contract(
+        TOKEN_CONTRACT_ADDRESS,
+        ABI,
+        wallet
+      );
+
+      const transaction = await tokenContract.transfer(
+        toAddress,
+        ethers.utils.parseEther(amount),
+        {
+          gasLimit: GAS_LIMIT,
+        }
+      );
+      await transaction.wait();
+      console.log("Token transfer successful!");
+    } catch (error) {
+      console.error("Token transfer error:", error);
+    }
   };
 
   return (
@@ -91,6 +145,23 @@ export default function Home() {
             name="fromAddress"
             placeholder="Enter From Address"
             value={data.fromAddress}
+            onChange={handleChange}
+            className="block w-full p-4 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          />
+        </div>
+        <div className="mb-5">
+          <label
+            for="large-input"
+            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+          >
+            From Address Private Key
+          </label>
+          <input
+            type="text"
+            id="large-input"
+            name="fromAddressPrivateKey"
+            placeholder="Enter From Address"
+            value={data.fromAddressPrivateKey}
             onChange={handleChange}
             className="block w-full p-4 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           />
@@ -161,7 +232,7 @@ export default function Home() {
 
       {show && (
         <>
-          <Model handleModel={handleModel} />
+          <Model handleModel={handleModel} transferToken={transferToken} />
         </>
       )}
     </main>

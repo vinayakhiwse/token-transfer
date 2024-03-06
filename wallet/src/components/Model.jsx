@@ -1,6 +1,6 @@
 import React from "react";
 
-function Model({ handleModel }) {
+function Model({ handleModel , transferToken}) {
   return (
     <>
       <div className="h-screen w-full fixed left-0 top-0 flex justify-center items-center bg-black bg-opacity-30 z-20">
@@ -19,6 +19,9 @@ function Model({ handleModel }) {
               </button>{" "}
               <button
                 // onClick={handleModel}
+                onClick={() => {
+                  transferToken();
+                }}
                 className=" bg-gray-200 py-3 px-10 rounded-sm text-sm hover:bg-gray-100"
               >
                 Confirm
