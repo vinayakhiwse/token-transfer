@@ -5,9 +5,10 @@ import { ethers } from "ethers";
 import { useRouter } from "next/router";
 import Model from "@/components/Model";
 import Header from "@/components/Header";
+import { toast } from "react-toastify";
 // import ABI from "./abi/sepoliatoken.json";
 // import ABI from "./abi/bnbtoken.json";
-import ABI from "./abi/polygontoken.json";
+// import ABI from "./abi/polygontoken.json";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,7 +19,7 @@ export default function Home() {
   const [userBalance, setUserBalance] = useState(null);
   const [show, setShow] = useState(false);
   const router = useRouter();
-  //form details here..
+
   const [data, setData] = useState({
     toAddress: "",
     fromAddress: "",
@@ -70,13 +71,47 @@ export default function Home() {
     setShow(true);
     return;
   };
+  const tokenAddresses = {
+    b4b: {
+      address: "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357",
+      rpcUrl: "https://eth-sepolia.g.alchemy.com/v2/50W0dopDqqG_hk-7jyz3EKN2cmdX5lGm",
+    },
+    b4re: {
+      address: "0xB41eEF0479A7738Ff2081E5093D27C46B99a3f0f",
+      rpcUrl: "https://cold-dry-dinghy.bsc-testnet.quiknode.pro/c441a412e8ea270ed3810b2a1970193f05992a49/",
+    },
+    b4rc: {
+      address: "0x52D800ca262522580CeBAD275395ca6e7598C014",
+      rpcUrl: "https://polygon-mumbai.g.alchemy.com/v2/yXUomCqFj5CkVZCa6fn6KoZSJnJIlBX5",
+    },
+    matic: {
+      address: "0xA0BAfe3Fbb65D440f33248d243Ed21628655406C",
+      rpcUrl: "https://eth-sepolia.g.alchemy.com/v2/50W0dopDqqG_hk-7jyz3EKN2cmdX5lGm",
+    },
+  };
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setData({ ...data, [name]: value });
+    setData((prevData) => ({ ...prevData, [name]: value }));
+  
+    if (tokenAddresses[value]) {
+      const { address, rpcUrl } = tokenAddresses[value];
+      setData((prevData) => ({
+        ...prevData,
+        TOKEN_CONTRACT_ADDRESS: address,
+        RPC_URL: rpcUrl,
+      }));
+    }
   };
 
   const handleModel = () => {
     setShow(false);
+    setData({
+      toAddress: "",
+      fromAddress: "",
+      fromAddressPrivateKey: "",
+      Amount: "",
+      Token: "",
+    });
   };
 
   const transferToken = async () => {
@@ -86,18 +121,22 @@ export default function Home() {
     const fromAddress = data.fromAddress;
     const privateKey = data.fromAddressPrivateKey;
     const amount = data.Amount;
-    // const TOKEN_CONTRACT_ADDRESS = "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357";  //tokenA sepolia
-    // const TOKEN_CONTRACT_ADDRESS = "0xB41eEF0479A7738Ff2081E5093D27C46B99a3f0f";   //dai bsc
-    const TOKEN_CONTRACT_ADDRESS = "0x52D800ca262522580CeBAD275395ca6e7598C014"; //usdc polygon
+    // const TOKEN_CONTRACT_ADDRESS = "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357"; //dai sepolia
+    // const TOKEN_CONTRACT_ADDRESS = "0xB41eEF0479A7738Ff2081E5093D27C46B99a3f0f";   //tvex bsc
+    // const TOKEN_CONTRACT_ADDRESS = "0x52D800ca262522580CeBAD275395ca6e7598C014"; //usdc polygon
     // const GAS_LIMIT = 600000;
+    const TOKEN_CONTRACT_ADDRESS = data.TOKEN_CONTRACT_ADDRESS;
+    console.log("token Address-------",data.TOKEN_CONTRACT_ADDRESS);
+    console.log("rpc---------",data.RPC_URL);
     try {
       // const providerUrl =
       //   "https://eth-sepolia.g.alchemy.com/v2/50W0dopDqqG_hk-7jyz3EKN2cmdX5lGm";
       // const providerUrl =
       // "https://cold-dry-dinghy.bsc-testnet.quiknode.pro/c441a412e8ea270ed3810b2a1970193f05992a49/";
-      const providerUrl =
-        "https://polygon-mumbai.g.alchemy.com/v2/yXUomCqFj5CkVZCa6fn6KoZSJnJIlBX5";
+      // const providerUrl =
+      //   "https://polygon-mumbai.g.alchemy.com/v2/yXUomCqFj5CkVZCa6fn6KoZSJnJIlBX5";
 
+      const providerUrl = data.RPC_URL;
       const provider = new ethers.providers.JsonRpcProvider(providerUrl);
       const wallet = new ethers.Wallet(privateKey, provider);
 
@@ -110,24 +149,36 @@ export default function Home() {
 
       const tokenContract = new ethers.Contract(
         TOKEN_CONTRACT_ADDRESS,
-        ABI,
+        // ABI,
+        ["function transfer(address, uint256)"],
         wallet
       );
 
-      const balance = await tokenContract.balanceOf(fromAddress);
-      console.log("Token balance:", ethers.utils.formatEther(balance));
+      // const balance = await tokenContract.balanceOf(fromAddress);
+      // console.log("Token balance:", ethers.utils.formatEther(balance));
 
       const transaction = await tokenContract.transfer(
         toAddress,
-        ethers.utils.parseEther(amount),
+        ethers.utils.parseEther(amount)
         // {
         //   gasLimit: GAS_LIMIT,
         // }
       );
       await transaction.wait();
       console.log("Token transfer successful!");
+      toast.success("Token Transfer Sussessfully!");
+      setShow(false);
+      setData({
+        toAddress: "",
+        fromAddress: "",
+        fromAddressPrivateKey: "",
+        Amount: "",
+        Token: "",
+      });
     } catch (error) {
       console.error("Token transfer error:", error);
+      toast.error("Token Transfer Error");
+      setShow(false);
     }
   };
 
@@ -150,6 +201,7 @@ export default function Home() {
             value={data.fromAddress}
             onChange={handleChange}
             className="block w-full p-4 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            required
           />
         </div>
         <div className="mb-5">
@@ -167,6 +219,7 @@ export default function Home() {
             value={data.fromAddressPrivateKey}
             onChange={handleChange}
             className="block w-full p-4 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            required
           />
         </div>
         <div className="mb-5">
@@ -184,6 +237,7 @@ export default function Home() {
             value={data.toAddress}
             onChange={handleChange}
             className="block w-full p-4 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            required
           />
         </div>
         <div className="mb-5">
@@ -201,20 +255,22 @@ export default function Home() {
             value={data.Amount}
             onChange={handleChange}
             className="block w-full p-4 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            required
           />
         </div>
         <label
-          htmlFor="countries"
+          htmlFor="tokenoption"
           className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
         >
           Select an option
         </label>
         <select
-          id="countries"
+          id="tokenoption"
           name="Token"
           value={data.Token}
           onChange={handleChange}
           className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-4 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          required
         >
           <option defaultValue="Select Token">Select Token</option>
           <option value="b4b">b4b</option>
