@@ -6,14 +6,10 @@ import { useRouter } from "next/router";
 import Model from "@/components/Model";
 import Header from "@/components/Header";
 import { toast } from "react-toastify";
-// import ABI from "./abi/sepoliatoken.json";
-// import ABI from "./abi/bnbtoken.json";
-// import ABI from "./abi/polygontoken.json";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
-  // console.log("ABI: ",ABI);
   const [errorMessage, setErrorMessage] = useState(null);
   const [defaultAccount, setDefaultAccount] = useState(null);
   const [userBalance, setUserBalance] = useState(null);
@@ -74,38 +70,21 @@ export default function Home() {
   };
 
   const tokenAddresses = {
-    b4b: {
-      address: "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357",
-      rpcUrl:
-        "https://eth-sepolia.g.alchemy.com/v2/50W0dopDqqG_hk-7jyz3EKN2cmdX5lGm",
-    },
-    b4re: {
-      address: "0xB41eEF0479A7738Ff2081E5093D27C46B99a3f0f",
-      rpcUrl:
-        "https://cold-dry-dinghy.bsc-testnet.quiknode.pro/c441a412e8ea270ed3810b2a1970193f05992a49/",
-    },
-    b4rc: {
-      address: "0x52D800ca262522580CeBAD275395ca6e7598C014",
-      rpcUrl:
-        "https://polygon-mumbai.g.alchemy.com/v2/yXUomCqFj5CkVZCa6fn6KoZSJnJIlBX5",
-    },
-    matic: {
-      address: "0xA0BAfe3Fbb65D440f33248d243Ed21628655406C",
-      rpcUrl:
-        "https://eth-sepolia.g.alchemy.com/v2/50W0dopDqqG_hk-7jyz3EKN2cmdX5lGm",
-    },
+    b4b: "0x993C211240a1987A46f1a2ba210e7f2499F2AF3a",
+    b4re: "0x3c27564e3161bbaA6E7d2f0320fa4BE77AED54da",
+    b4rc: "0x6be961cc7f0f182a58D1fa8052C5e92026CBEcAa",
+    matic: "0x66735D689Dd1530410349Da0560354b80b88219b",
   };
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setData((prevData) => ({ ...prevData, [name]: value }));
 
     if (tokenAddresses[value]) {
-      const { address, rpcUrl } = tokenAddresses[value];
       setData((prevData) => ({
         ...prevData,
-        TOKEN_CONTRACT_ADDRESS: address,
-        RPC_URL: rpcUrl,
+        TOKEN_CONTRACT_ADDRESS: tokenAddresses[value],
       }));
     }
   };
@@ -128,23 +107,13 @@ export default function Home() {
     const fromAddress = data.fromAddress;
     const privateKey = data.fromAddressPrivateKey;
     const amount = data.Amount;
-    // const TOKEN_CONTRACT_ADDRESS = "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357"; //dai sepolia
-    // const TOKEN_CONTRACT_ADDRESS = "0xB41eEF0479A7738Ff2081E5093D27C46B99a3f0f";   //tvex bsc
-    // const TOKEN_CONTRACT_ADDRESS = "0x52D800ca262522580CeBAD275395ca6e7598C014"; //usdc polygon
-    // const GAS_LIMIT = 600000;
     const TOKEN_CONTRACT_ADDRESS = data.TOKEN_CONTRACT_ADDRESS;
     console.log("token Address-------", data.TOKEN_CONTRACT_ADDRESS);
-    console.log("rpc---------", data.RPC_URL);
     try {
       setLoading(true);
-      // const providerUrl =
-      //   "https://eth-sepolia.g.alchemy.com/v2/50W0dopDqqG_hk-7jyz3EKN2cmdX5lGm";
-      // const providerUrl =
-      // "https://cold-dry-dinghy.bsc-testnet.quiknode.pro/c441a412e8ea270ed3810b2a1970193f05992a49/";
-      // const providerUrl =
-      //   "https://polygon-mumbai.g.alchemy.com/v2/yXUomCqFj5CkVZCa6fn6KoZSJnJIlBX5";
+      const providerUrl =
+        "https://polygon-mainnet.g.alchemy.com/v2/9X6kIQlvfMLFRE8lI4LyrfWPJcRryDev";
 
-      const providerUrl = data.RPC_URL;
       const provider = new ethers.providers.JsonRpcProvider(providerUrl);
       const wallet = new ethers.Wallet(privateKey, provider);
 
@@ -157,7 +126,6 @@ export default function Home() {
 
       const tokenContract = new ethers.Contract(
         TOKEN_CONTRACT_ADDRESS,
-        // ABI,
         ["function transfer(address, uint256)"],
         wallet
       );
@@ -168,9 +136,6 @@ export default function Home() {
       const transaction = await tokenContract.transfer(
         toAddress,
         ethers.utils.parseEther(amount)
-        // {
-        //   gasLimit: GAS_LIMIT,
-        // }
       );
       await transaction.wait();
       console.log("Token transfer successful!");
@@ -312,9 +277,9 @@ export default function Home() {
                   y1="32"
                   x2="128"
                   y2="64"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="24"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="24"
                 ></line>
                 <line
                   x1="195.9"
@@ -392,9 +357,6 @@ export default function Home() {
           )}
         </div>
       </form>
-      {/* <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-gray-800 bg-opacity-75">
-              <CircularProgress color="primary" />
-            </div> */}
 
       {show && (
         <>
