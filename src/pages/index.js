@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Inter } from "next/font/google";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ethers } from "ethers";
 import { useRouter } from "next/router";
 import Model from "@/components/Model";
@@ -9,11 +9,8 @@ import { toast } from "react-toastify";
 const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
-  const [errorMessage, setErrorMessage] = useState(null);
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const [newAmt, setNewAmt] = useState(0);
 
   const [data, setData] = useState({
     toAddress: "",
@@ -22,25 +19,25 @@ export default function Home() {
     Amount: "",
     Token: "",
   });
-  //
+
   let providerUrl =
-    "https://polygon-mainnet.infura.io/v3/3e53f0548d8d4cc6b756b566edd85eec";
+    "https://clean-crimson-bridge.matic.quiknode.pro/367164a546a81efa760444831915fe02f9a067f8/";
+
+  const tokenAddresses = {
+    b4b: "0x993C211240a1987A46f1a2ba210e7f2499F2AF3a",
+    b4re: "0x3c27564e3161bbaA6E7d2f0320fa4BE77AED54da",
+    b4rc: "0x6be961cc7f0f182a58D1fa8052C5e92026CBEcAa",
+    matic: "0x66735D689Dd1530410349Da0560354b80b88219b",
+  };
 
   const handleAmount = async () => {
     try {
-      // console.log("amount", amount);
       const provider = new ethers.providers.JsonRpcProvider(providerUrl);
-      // const provider = new ethers.providers.JsonRpcProvider(providerUrl, { ensAddress: null });
       const walletLocal = new ethers.Wallet(
         data.fromAddressPrivateKey,
         provider
       );
-      console.log("fromAddress", data.fromAddress);
-      console.log("fromToken", data.Token);
-      console.log("data.fromAddressPrivateKey", data.fromAddressPrivateKey);
       const localAddress = tokenAddresses[data.Token];
-      console.log("localAddress", localAddress);
-
       const tokenContractBalance = new ethers.Contract(
         localAddress,
         ["function balanceOf(address) view returns (uint)"],
@@ -50,9 +47,6 @@ export default function Home() {
       if (localAddress === "0x66735D689Dd1530410349Da0560354b80b88219b") {
         const maticBalance = await provider.getBalance(data.fromAddress);
         let formattedMatic = ethers.utils.formatEther(maticBalance.toString());
-        console.log("maticBalance", formattedMatic);
-        // data.Amount = formattedMatic;
-        // setNewAmt(formattedMatic);
         setData({
           toAddress: data.toAddress,
           fromAddress: data.fromAddress,
@@ -61,16 +55,12 @@ export default function Home() {
           Token: data.Token,
         });
       } else {
-        console.log("tokenContractBalance", tokenContractBalance);
         const getMaxAmount = await tokenContractBalance.balanceOf(
           data.fromAddress
         );
-        console.log("getMaxAmount", Number(getMaxAmount));
-
         let newBalance = getMaxAmount.toString();
         let parseBalance = ethers.utils.formatEther(newBalance);
         let newAmount1 = Number(parseBalance);
-        // data.Amount = newAmount1;
         setData({
           toAddress: data.toAddress,
           fromAddress: data.fromAddress,
@@ -78,28 +68,15 @@ export default function Home() {
           Amount: newAmount1,
           Token: data.Token,
         });
-        // setNewAmt(newAmount1);
-        console.log("balance is", data);
       }
     } catch (e) {
       console.log("error", e);
     }
   };
 
-  console.log("data outside", data);
-  //transfer token amount here...
   const handleSubmit = () => {
-    // event.preventDefault();
-    console.log("Form data------", data);
     setShow(true);
     return;
-  };
-
-  const tokenAddresses = {
-    b4b: "0x993C211240a1987A46f1a2ba210e7f2499F2AF3a",
-    b4re: "0x3c27564e3161bbaA6E7d2f0320fa4BE77AED54da",
-    b4rc: "0x6be961cc7f0f182a58D1fa8052C5e92026CBEcAa",
-    matic: "0x66735D689Dd1530410349Da0560354b80b88219b",
   };
 
   const handleChange = (e) => {
@@ -126,38 +103,29 @@ export default function Home() {
   };
 
   const transferToken = async () => {
-    console.log("Form data in transfer token function------", data);
-    const token = data.Token;
     const toAddress = data.toAddress;
     const fromAddress = data.fromAddress;
     const privateKey = data.fromAddressPrivateKey;
     const amount = data.Amount;
-    const TOKEN_CONTRACT_ADDRESS = data.TOKEN_CONTRACT_ADDRESS;
 
     try {
       setLoading(true);
-      console.log("token Address-------", data.TOKEN_CONTRACT_ADDRESS);
-      const providerUrl =
-        "https://polygon-mainnet.infura.io/v3/3e53f0548d8d4cc6b756b566edd85eec";
+      setShow(false);
+
+      let providerUrl =
+        "https://clean-crimson-bridge.matic.quiknode.pro/367164a546a81efa760444831915fe02f9a067f8/";
       const provider = new ethers.providers.JsonRpcProvider(providerUrl);
       const wallet = new ethers.Wallet(privateKey, provider);
-      //
+
       const tokenContractBalance = new ethers.Contract(
-        TOKEN_CONTRACT_ADDRESS,
+        tokenAddresses[data.Token],
         ["function balanceOf(address) view returns (uint)"],
         wallet
       );
 
-      console.log("fromAddress", fromAddress);
       const getMaxAmount = await tokenContractBalance.balanceOf(fromAddress);
-      // console.log("maxAmount", Number(getMaxAmount));
-      console.log("maxAmount", getMaxAmount.toString());
-
       let newBalance = getMaxAmount.toString();
       let parseBalance = ethers.utils.formatEther(newBalance);
-      console.log("balance is", Number(parseBalance));
-
-      // return;
 
       if (
         !ethers.utils.isAddress(toAddress) ||
@@ -167,7 +135,7 @@ export default function Home() {
       }
 
       const tokenContract = new ethers.Contract(
-        TOKEN_CONTRACT_ADDRESS,
+        tokenAddresses[data.Token],
         ["function transfer(address, uint256)"],
         wallet
       );
@@ -176,12 +144,8 @@ export default function Home() {
         toAddress,
         ethers.utils.parseEther(amount)
       );
-      console.log("Before transaction---------", transaction);
-      console.log("Before transaction hash---------", transaction.hash);
       await transaction.wait();
-      console.log(" after transaction---------", transaction);
       console.log("after transaction hash---------", transaction.hash);
-      console.log("Token transfer successful!");
       toast.success("Token Transfer Sussessfully!");
       setShow(false);
       setData({
@@ -198,10 +162,9 @@ export default function Home() {
       setShow(false);
     } finally {
       setLoading(false);
+      setShow(false);
     }
   };
-
-  console.log("datas are.......................................", data);
 
   return (
     <main className="mt-24">
@@ -305,7 +268,7 @@ export default function Home() {
             Max Token
           </button>
         </div>
-        <div>{errorMessage && errorMessage}</div>
+
         <div className="w-full flex items-center justify-center mt-4">
           {loading ? (
             <div
