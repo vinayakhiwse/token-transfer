@@ -11,13 +11,14 @@ const inter = Inter({ subsets: ["latin"] });
 export default function Home() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [defaultAccount, setDefaultAccount] = useState(null);
+  const [Address, setAddress] = useState("");
   const [userBalance, setUserBalance] = useState(null);
   const [show, setShow] = useState(false);
   const router = useRouter();
   //form details here..
   const [data, setData] = useState({
     toAddress: "",
-    fromAddress: "",
+    fromAddress: Address,
     Amount: "",
     Token: "",
   });
@@ -29,9 +30,11 @@ export default function Home() {
         const accounts = await window.ethereum.request({
           method: "eth_accounts",
         });
+
         const account = accounts[0];
         console.log("account", account);
         if (account) {
+          setAddress(account);
           await accountChangedHandler(account);
         }
       } catch (error) {
@@ -59,11 +62,48 @@ export default function Home() {
   };
 
   //tranfer token amount here...
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     console.log("runned", data);
-    setShow(true);
-    return;
+    //transfer token logic here..
+    try {
+      const provider = new ethers.providers.JsonRpcProvider(
+        "https://eth-sepolia.g.alchemy.com/v2/50W0dopDqqG_hk-7jyz3EKN2cmdX5lGm"
+      );
+      // Create wallet using private key
+      const privateKey =
+        "e678e2a5c963a76b1b016bf053150cb88e6cc265bf49a37846f9f323764c3183";
+      const wallet = new ethers.Wallet(privateKey, provider);
+      // Load token contract
+      const tokenContractAddress = "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8";
+      const tokenContract = new ethers.Contract(
+        tokenContractAddress,
+        ["function transfer(address, uint256)"],
+        wallet
+      );
+      // Transfer tokens
+      // const recipientAddress = "0xd0Cc6653cF4d60f476CBF4d7b5D4fCDF1C6c9A4E";
+      const recipientAddress = data.toAddress;
+      // const gasLimit = await tokenContract.estimateGas.transfer(
+      //   recipientAddress,
+      //   "10"
+      // );
+      const gasLimit = 600000;
+      // const increasedGasLimit = gasLimit.mul(110).div(100);
+      const tx = await tokenContract.transfer(
+        recipientAddress,
+        // ethers.utils.parseUnits("10"),
+        ethers.utils.parseUnits(data.Amount, "mwei"),
+        { gasLimit }
+      );
+      console.log("tokenContract", tx);
+      // Wait for transaction confirmation
+      await tx.wait();
+      console.log("Transaction confirmed:", tx.hash);
+      setShow(true);
+    } catch (error) {
+      console.log("error in transfering the token", error);
+    }
   };
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -73,6 +113,45 @@ export default function Home() {
   const handleModel = () => {
     setShow(false);
   };
+
+  const getTokenAddress = async (walletAddress) => {
+    const provider = new ethers.providers.JsonRpcProvider(
+      "https://eth-sepolia.g.alchemy.com/v2/50W0dopDqqG_hk-7jyz3EKN2cmdX5lGm"
+    );
+    // Define the Transfer event signature
+    const transferEvent = ethers.utils.id("Transfer(address,address,uint256)");
+
+    // Get the filter to retrieve Transfer events for the wallet address
+    const filter = {
+      address: walletAddress,
+      topics: [transferEvent, null, null], // The first topic is the Transfer event signature
+    };
+
+    // Get the logs matching the filter
+    const logs = await provider.getLogs(filter);
+
+    // Extract unique token addresses from the logs
+    const tokenAddresses = new Set();
+    for (const log of logs) {
+      console.log("walletAddress", log);
+      const tokenAddress = ethers.utils.getAddress(
+        "0x" + log.topics[2].slice(-40)
+      ); // Last topic contains the token address
+      tokenAddresses.add(tokenAddress);
+    }
+
+    return [...tokenAddresses];
+  };
+  useEffect(() => {
+    const fetchTokenAddresses = async () => {
+      if (Address) {
+        const addresses = await getTokenAddress(Address);
+        console.log("addresses", addresses);
+      }
+    };
+
+    fetchTokenAddresses();
+  }, [Address]);
 
   return (
     <main>
@@ -90,7 +169,7 @@ export default function Home() {
             id="large-input"
             name="fromAddress"
             placeholder="Enter From Address"
-            value={data.fromAddress}
+            value={Address}
             onChange={handleChange}
             className="block w-full p-4 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-base focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           />
@@ -158,7 +237,6 @@ export default function Home() {
           </button>
         </div>
       </form>
-
       {show && (
         <>
           <Model handleModel={handleModel} />
