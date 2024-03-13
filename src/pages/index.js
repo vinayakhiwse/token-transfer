@@ -13,6 +13,8 @@ export default function Home() {
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const [newAmt,setNewAmt] = useState(0);
+
 
   const [data, setData] = useState({
     toAddress: "",
@@ -21,12 +23,61 @@ export default function Home() {
     Amount: "",
     Token: "",
   });
+  //
+  let providerUrl = "https://polygon-mainnet.infura.io/v3/3e53f0548d8d4cc6b756b566edd85eec";
+  // const provider = new ethers.providers.JsonRpcProvider(providerUrl);
+  // const wallet = new ethers.Wallet(privateKey, provider);
 
-  //tranfer token amount here...
-  const handleSubmit = (event) => {
-    event.preventDefault();
+  const handleAmount = async () => {
+    try {
+      // console.log("amount", amount);
+      const provider = new ethers.providers.JsonRpcProvider(providerUrl);
+      // const provider = new ethers.providers.JsonRpcProvider(providerUrl, { ensAddress: null });
+      const walletLocal = new ethers.Wallet(data.fromAddressPrivateKey, provider);
+      console.log("fromAddress", data.fromAddress);
+      console.log("fromToken", data.Token);
+      console.log("data.fromAddressPrivateKey", data.fromAddressPrivateKey);
+      const localAddress = tokenAddresses[data.Token];
+      console.log("localAddress", localAddress)
+
+      const tokenContractBalance = new ethers.Contract(
+        localAddress,
+        ['function balanceOf(address) view returns (uint)'],
+        walletLocal
+      );
+
+      if (localAddress === "0x66735D689Dd1530410349Da0560354b80b88219b") {
+        const maticBalance = await provider.getBalance(data.fromAddress);
+        let formattedMatic = ethers.utils.formatEther(maticBalance.toString());
+        console.log("maticBalance", formattedMatic);
+        data.Amount = formattedMatic;
+        setNewAmt(formattedMatic);
+      }
+
+      else {
+        console.log("tokenContractBalance", tokenContractBalance);
+        const getMaxAmount = await tokenContractBalance.balanceOf(data.fromAddress);
+        console.log("getMaxAmount", Number(getMaxAmount));
+
+        let newBalance = getMaxAmount.toString();
+        let parseBalance = ethers.utils.formatEther(newBalance);
+        let newAmount1 = Number(parseBalance);
+        data.Amount = newAmount1;
+        setNewAmt(newAmount1);
+        console.log("balance is", data)
+      }
+    } catch (e) {
+      console.log("error", e)
+    }
+  }
+
+  console.log("data outside", data)
+  //transfer token amount here...
+  const handleSubmit = () => {
+    // event.preventDefault();
     console.log("Form data------", data);
     setShow(true);
+
     return;
   };
 
@@ -72,11 +123,27 @@ export default function Home() {
     try {
       setLoading(true);
       console.log("token Address-------", data.TOKEN_CONTRACT_ADDRESS);
-      const providerUrl =
-        "https://black-white-model.matic.quiknode.pro/f6feee86bfb15b150e899bbb9b4fd947e027a268/";
-
+      // const providerUrl = "https://black-white-model.matic.quiknode.pro/f6feee86bfb15b150e899bbb9b4fd947e027a268/";
+      const providerUrl = "https://polygon-mainnet.infura.io/v3/3e53f0548d8d4cc6b756b566edd85eec";
       const provider = new ethers.providers.JsonRpcProvider(providerUrl);
       const wallet = new ethers.Wallet(privateKey, provider);
+      //
+      const tokenContractBalance = new ethers.Contract(
+        TOKEN_CONTRACT_ADDRESS,
+        ['function balanceOf(address) view returns (uint)'],
+        wallet
+      );
+
+      console.log("fromAddress", fromAddress);
+      const getMaxAmount = await tokenContractBalance.balanceOf(fromAddress);
+      // console.log("maxAmount", Number(getMaxAmount));
+      console.log("maxAmount", getMaxAmount.toString());
+
+      let newBalance = getMaxAmount.toString();
+      let parseBalance = ethers.utils.formatEther(newBalance);
+      console.log("balance is", Number(parseBalance))
+
+      // return;
 
       if (
         !ethers.utils.isAddress(toAddress) ||
@@ -91,13 +158,16 @@ export default function Home() {
         wallet
       );
 
-      // const balance = await tokenContract.balanceOf(fromAddress);
-      // console.log("Token balance:", ethers.utils.formatEther(balance));
-
       const transaction = await tokenContract.transfer(
         toAddress,
         ethers.utils.parseEther(amount)
       );
+
+      // const balance = await tokenContract.balanceOf(fromAddress);
+      // console.log("Token balance:", ethers.utils.formatEther(balance));
+
+
+
       console.log("Before transaction---------", transaction);
       console.log("Before transaction hash---------", transaction.hash);
       await transaction.wait();
@@ -123,9 +193,12 @@ export default function Home() {
     }
   };
 
+
+  console.log("datas are.......................................", data);
+
   return (
     <main className="mt-24">
-      <form className="max-w-sm mx-auto" onSubmit={handleSubmit}>
+      <div className="max-w-sm mx-auto">
         <label
           htmlFor="Token"
           className="block mb-1 mt-3 ps-1 text-base font-medium text-gray-900"
@@ -212,7 +285,7 @@ export default function Home() {
             id="large-input"
             name="Amount"
             placeholder="Enter Amount"
-            value={data.Amount}
+            value={newAmt !== null ? newAmt : data.Amount}
             onChange={handleChange}
             className="block w-full p-4 ps-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             required
@@ -220,6 +293,7 @@ export default function Home() {
           <button
             type="button"
             className="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+            onClick={handleAmount}
           >
             Max Token
           </button>
@@ -315,14 +389,16 @@ export default function Home() {
             </div>
           ) : (
             <button
-              type="submit"
+              // type="submit"
+              onClick={handleSubmit}
               className="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
             >
               Transfer Token
             </button>
           )}
         </div>
-      </form>
+      </div>
+      {/*</form>*/}
 
       {show && (
         <>
