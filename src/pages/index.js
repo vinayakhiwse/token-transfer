@@ -302,9 +302,9 @@ export default function Home() {
           </button>
         </div>
       </div>
-      <div className="w-full flex items-center justify-center mt-4">
+      {/* <div className="w-full flex items-center justify-center mt-4">
         <p>{Tx}</p>
-      </div>
+      </div> */}
 
       {/*</form>*/}
 
