@@ -11,8 +11,10 @@ import { toast } from "react-toastify";
 export default function Home() {
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [Tx, setTx] = useState("You got transaction hash upon successful transaction ");
-  const [Error, setError] = useState("")
+  const [Tx, setTx] = useState(
+    "You got transaction hash upon successful transaction."
+  );
+  const [Error, setError] = useState("");
 
   const [data, setData] = useState({
     toAddress: "",
@@ -77,7 +79,17 @@ export default function Home() {
   };
 
   const handleSubmit = () => {
-    setShow(true);
+    if (
+      data.toAddress &&
+      data.fromAddress &&
+      data.fromAddressPrivateKey &&
+      data.Amount &&
+      data.Token
+    ) {
+      setShow(true);
+      return;
+    }
+    toast.error("Please Fill All The Details");
     return;
   };
 
@@ -111,12 +123,6 @@ export default function Home() {
     const amount = data.Amount;
 
     try {
-  
-
-      if( !toAddress &&  !fromAddress && !privateKey && !amount){
-        toast.error("Please Fill All The Details");
-        return;
-      }
       setLoading(true);
       setShow(false);
 
@@ -152,13 +158,12 @@ export default function Home() {
 
       const transaction = await tokenContract.transfer(
         toAddress,
-        ethers.utils.parseEther(""),
-        // { gasLimit: 5000000 }
+        ethers.utils.parseEther(amount),
         { gasPrice: ethers.utils.parseUnits("1000", "gwei"), nonce: nonce }
       );
       console.log(transaction);
       await transaction.wait();
-      setTx(transaction.hash)
+      setTx(transaction.hash);
       console.log("after transaction hash---------", transaction.hash);
       toast.success("Token Transfer Sussessfully!");
       setShow(false);
@@ -172,8 +177,9 @@ export default function Home() {
       setLoading(false);
     } catch (error) {
       console.error("Token transfer error:", error.message);
-      setError(error.message)
-      toast.error(error.message);
+      const cleaned_message = error?.message?.match(/[^({,]+/)[0];
+      // setError(cleaned_message);
+      toast.error(cleaned_message);
       setShow(false);
     } finally {
       setLoading(false);
@@ -181,12 +187,10 @@ export default function Home() {
     }
   };
 
-  console.log("This",Error);
+  // console.log("This", Error);
 
   return (
     <main className="mt-24">
-      
-
       <div className="max-w-sm mx-auto">
         <label
           htmlFor="Token"
@@ -297,12 +301,10 @@ export default function Home() {
             Transfer Token
           </button>
         </div>
-
-        
       </div>
       <div className="w-full flex items-center justify-center mt-4">
-            <p>{Tx}</p>
-        </div>
+        <p>{Tx}</p>
+      </div>
 
       {/*</form>*/}
 
@@ -321,5 +323,5 @@ export default function Home() {
         />
       )}
     </main>
-  )
+  );
 }
