@@ -6,11 +6,13 @@ import { useRouter } from "next/router";
 import Model from "@/components/Model";
 import { toast } from "react-toastify";
 
-const inter = Inter({ subsets: ["latin"] });
+// const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [Tx, setTx] = useState("You got transaction hash upon successful transaction ");
+  const [Error, setError] = useState("")
 
   const [data, setData] = useState({
     toAddress: "",
@@ -109,11 +111,18 @@ export default function Home() {
     const amount = data.Amount;
 
     try {
+  
+
+      if( !toAddress &&  !fromAddress && !privateKey && !amount){
+        toast.error("Please Fill All The Details");
+        return;
+      }
       setLoading(true);
       setShow(false);
 
       let providerUrl =
-        "https://clean-crimson-bridge.matic.quiknode.pro/367164a546a81efa760444831915fe02f9a067f8/";
+        "https://stylish-frosty-layer.matic.quiknode.pro/3e14897427dfe569ea2832de4ad363d6bd5cda00/";
+
       const provider = new ethers.providers.JsonRpcProvider(providerUrl);
       const wallet = new ethers.Wallet(privateKey, provider);
 
@@ -139,12 +148,17 @@ export default function Home() {
         ["function transfer(address, uint256)"],
         wallet
       );
+      const nonce = await wallet.getTransactionCount("pending");
 
       const transaction = await tokenContract.transfer(
         toAddress,
-        ethers.utils.parseEther(amount)
+        ethers.utils.parseEther(""),
+        // { gasLimit: 5000000 }
+        { gasPrice: ethers.utils.parseUnits("1000", "gwei"), nonce: nonce }
       );
+      console.log(transaction);
       await transaction.wait();
+      setTx(transaction.hash)
       console.log("after transaction hash---------", transaction.hash);
       toast.success("Token Transfer Sussessfully!");
       setShow(false);
@@ -157,8 +171,9 @@ export default function Home() {
       });
       setLoading(false);
     } catch (error) {
-      console.error("Token transfer error:", error);
-      toast.error("Token Transfer Error");
+      console.error("Token transfer error:", error.message);
+      setError(error.message)
+      toast.error(error.message);
       setShow(false);
     } finally {
       setLoading(false);
@@ -166,8 +181,12 @@ export default function Home() {
     }
   };
 
+  console.log("This",Error);
+
   return (
     <main className="mt-24">
+      
+
       <div className="max-w-sm mx-auto">
         <label
           htmlFor="Token"
@@ -270,111 +289,37 @@ export default function Home() {
         </div>
 
         <div className="w-full flex items-center justify-center mt-4">
-          {loading ? (
-            <div
-              aria-label="Loading..."
-              role="status"
-              className="flex items-center space-x-2"
-            >
-              <svg
-                className="h-20 w-20 animate-spin stroke-gray-500"
-                viewBox="0 0 256 256"
-              >
-                <line
-                  x1="128"
-                  y1="32"
-                  x2="128"
-                  y2="64"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="24"
-                ></line>
-                <line
-                  x1="195.9"
-                  y1="60.1"
-                  x2="173.3"
-                  y2="82.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="24"
-                ></line>
-                <line
-                  x1="224"
-                  y1="128"
-                  x2="192"
-                  y2="128"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  stroke-width="24"
-                ></line>
-                <line
-                  x1="195.9"
-                  y1="195.9"
-                  x2="173.3"
-                  y2="173.3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  stroke-width="24"
-                ></line>
-                <line
-                  x1="128"
-                  y1="224"
-                  x2="128"
-                  y2="192"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  stroke-width="24"
-                ></line>
-                <line
-                  x1="60.1"
-                  y1="195.9"
-                  x2="82.7"
-                  y2="173.3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  stroke-width="24"
-                ></line>
-                <line
-                  x1="32"
-                  y1="128"
-                  x2="64"
-                  y2="128"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  stroke-width="24"
-                ></line>
-                <line
-                  x1="60.1"
-                  y1="60.1"
-                  x2="82.7"
-                  y2="82.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  stroke-width="24"
-                ></line>
-              </svg>
-              <span className="text-4xl font-medium text-gray-500">
-                Loading...
-              </span>
-            </div>
-          ) : (
-            <button
-              // type="submit"
-              onClick={handleSubmit}
-              className="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
-            >
-              Transfer Token
-            </button>
-          )}
+          <button
+            // type="submit"
+            onClick={handleSubmit}
+            className="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
+          >
+            Transfer Token
+          </button>
         </div>
+
+        
       </div>
+      <div className="w-full flex items-center justify-center mt-4">
+            <p>{Tx}</p>
+        </div>
+
       {/*</form>*/}
 
       {show && (
-        <>
-          <Model handleModel={handleModel} transferToken={transferToken} />
-        </>
+        <Model
+          handleModel={handleModel}
+          transferToken={transferToken}
+          loading={loading}
+        />
+      )}
+      {loading && (
+        <Model
+          handleModel={handleModel}
+          transferToken={transferToken}
+          loading={loading}
+        />
       )}
     </main>
-  );
+  )
 }
