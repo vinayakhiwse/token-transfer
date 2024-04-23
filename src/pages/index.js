@@ -24,8 +24,8 @@ export default function Home() {
     Token: "",
   });
 
-  let providerUrl =
-    "https://clean-crimson-bridge.matic.quiknode.pro/367164a546a81efa760444831915fe02f9a067f8/";
+  let providerUrl ="https://polygon-mainnet.g.alchemy.com/v2/yyBP7xjYd6MmkC9fmFUBvsCE9_UNtwHy";
+    // "https://clean-crimson-bridge.matic.quiknode.pro/367164a546a81efa760444831915fe02f9a067f8/";
 
   const tokenAddresses = {
     b4b: "0x993C211240a1987A46f1a2ba210e7f2499F2AF3a",
@@ -126,8 +126,8 @@ export default function Home() {
       setLoading(true);
       setShow(false);
 
-      let providerUrl =
-        "https://stylish-frosty-layer.matic.quiknode.pro/3e14897427dfe569ea2832de4ad363d6bd5cda00/";
+      let providerUrl ="https://polygon-mainnet.g.alchemy.com/v2/yyBP7xjYd6MmkC9fmFUBvsCE9_UNtwHy";
+        // "https://stylish-frosty-layer.matic.quiknode.pro/3e14897427dfe569ea2832de4ad363d6bd5cda00/";
 
       const provider = new ethers.providers.JsonRpcProvider(providerUrl);
       const wallet = new ethers.Wallet(privateKey, provider);
