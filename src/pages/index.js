@@ -1,12 +1,19 @@
-import Image from "next/image";
-import { Inter } from "next/font/google";
 import { useState } from "react";
 import { ethers } from "ethers";
 import { useRouter } from "next/router";
 import Model from "@/components/Model";
 import { toast } from "react-toastify";
+// import {log} from "next/dist/server/typescript/utils";
+// import {console} from "next/dist/compiled/@edge-runtime/primitives";
 
 // const inter = Inter({ subsets: ["latin"] });
+
+let providerUrl ="https://polygon-mainnet.g.alchemy.com/v2/yyBP7xjYd6MmkC9fmFUBvsCE9_UNtwHy";
+// "https://stylish-frosty-layer.matic.quiknode.pro/3e14897427dfe569ea2832de4ad363d6bd5cda00/";
+
+const provider = new ethers.providers.JsonRpcProvider(providerUrl);
+
+let wallet;
 
 export default function Home() {
   const [show, setShow] = useState(false);
@@ -24,7 +31,7 @@ export default function Home() {
     Token: "",
   });
 
-  let providerUrl ="https://polygon-mainnet.g.alchemy.com/v2/yyBP7xjYd6MmkC9fmFUBvsCE9_UNtwHy";
+  // let providerUrl ="https://polygon-mainnet.g.alchemy.com/v2/yyBP7xjYd6MmkC9fmFUBvsCE9_UNtwHy";
     // "https://clean-crimson-bridge.matic.quiknode.pro/367164a546a81efa760444831915fe02f9a067f8/";
 
   const tokenAddresses = {
@@ -36,12 +43,15 @@ export default function Home() {
 
   const handleAmount = async () => {
     try {
-      const provider = new ethers.providers.JsonRpcProvider(providerUrl);
+      // const provider = new ethers.providers.JsonRpcProvider(providerUrl);
       const walletLocal = new ethers.Wallet(
         data.fromAddressPrivateKey,
         provider
       );
       const localAddress = tokenAddresses[data.Token];
+
+      console.log(localAddress)
+
       const tokenContractBalance = new ethers.Contract(
         localAddress,
         ["function balanceOf(address) view returns (uint)"],
@@ -50,6 +60,13 @@ export default function Home() {
 
       if (localAddress === "0x66735D689Dd1530410349Da0560354b80b88219b") {
         const maticBalance = await provider.getBalance(data.fromAddress);
+
+        console.log("balance is", maticBalance)
+        console.log("balacne in string is", maticBalance.toString())
+        // console.log("balacne in string is", ethers.utils.parseEther(maticBalance))
+
+        return
+
         let formattedMatic = ethers.utils.formatEther(maticBalance.toString());
         setData({
           toAddress: data.toAddress,
@@ -117,65 +134,124 @@ export default function Home() {
   };
 
   const transferToken = async () => {
+
+    // return
+
     const toAddress = data.toAddress;
     const fromAddress = data.fromAddress;
     const privateKey = data.fromAddressPrivateKey;
-    const amount = data.Amount;
+    let amount = data.Amount;
+
+    wallet = new ethers.Wallet(privateKey, provider);
+
+    console.log("here")
+    console.log("token is", data.Token)
+    console.log("token is", tokenAddresses[data.Token])
+    console.log(`amount is`, amount)
 
     try {
-      setLoading(true);
-      setShow(false);
+        if (data.Token === "matic") {
+          const maticBalance = await provider.getBalance(fromAddress)
+          console.log(`Matic holdings are`, maticBalance)
+          console.log(`toAddress is`, toAddress)
 
-      let providerUrl ="https://polygon-mainnet.g.alchemy.com/v2/yyBP7xjYd6MmkC9fmFUBvsCE9_UNtwHy";
-        // "https://stylish-frosty-layer.matic.quiknode.pro/3e14897427dfe569ea2832de4ad363d6bd5cda00/";
+          // const amountToTransfer = ethers.utils.parseEther("0.000001"); // 1 MATIC
 
-      const provider = new ethers.providers.JsonRpcProvider(providerUrl);
-      const wallet = new ethers.Wallet(privateKey, provider);
+          const amountToTransfer = ethers.utils.parseEther(amount); // 1 MATIC
+          console.log("token to transfer is:", amountToTransfer)
 
-      const tokenContractBalance = new ethers.Contract(
-        tokenAddresses[data.Token],
-        ["function balanceOf(address) view returns (uint)"],
-        wallet
-      );
+          // Calculate gas price
+          const gasPrice = await provider.getGasPrice();
+          console.log(`Current gas price:`, gasPrice.toString());
+          console.log(`amount to transfer`, amountToTransfer)
 
-      const getMaxAmount = await tokenContractBalance.balanceOf(fromAddress);
-      let newBalance = getMaxAmount.toString();
-      let parseBalance = ethers.utils.formatEther(newBalance);
+          const tx = await wallet.sendTransaction({
+            to: toAddress,
+            value: amountToTransfer,
+            gasPrice: gasPrice
+          });
 
-      if (
-        !ethers.utils.isAddress(toAddress) ||
-        !ethers.utils.isAddress(fromAddress)
-      ) {
-        throw new Error("Invalid Ethereum address");
-      }
+          await tx.wait()
+          const receipt = await tx.wait();
 
-      const tokenContract = new ethers.Contract(
-        tokenAddresses[data.Token],
-        ["function transfer(address, uint256)"],
-        wallet
-      );
-      const nonce = await wallet.getTransactionCount("pending");
+          console.log("Transaction Receipt:", receipt);
+          console.log("Transaction Hash:", tx.hash)
+          console.log("MATIC transferred successfully")
+          toast.success(` ${data.Token.toUpperCase()} transferred successfully`);
+          return
+        } else {
+          setLoading(true);
+          setShow(false);
 
-      const transaction = await tokenContract.transfer(
-        toAddress,
-        ethers.utils.parseEther(amount),
-        { gasPrice: ethers.utils.parseUnits("1000", "gwei"), nonce: nonce }
-      );
-      console.log(transaction);
-      await transaction.wait();
-      setTx(transaction.hash);
-      console.log("after transaction hash---------", transaction.hash);
-      toast.success("Token Transfer Sussessfully!");
-      setShow(false);
-      setData({
-        toAddress: "",
-        fromAddress: "",
-        fromAddressPrivateKey: "",
-        Amount: "",
-        Token: "",
-      });
-      setLoading(false);
+          console.log("Token is", data.Token)
+          console.log("Token address is", tokenAddresses[data.Token])
+
+          const tokenContractBalance = new ethers.Contract(
+              tokenAddresses[data.Token],
+              ["function balanceOf(address) view returns (uint)"],
+              wallet
+          );
+
+          console.log(tokenAddresses[data.Token])
+          console.log(tokenContractBalance)
+
+          const getMaxAmount = await tokenContractBalance.balanceOf(fromAddress);
+          let newBalance = getMaxAmount.toString();
+          let parseBalance = ethers.utils.formatEther(newBalance);
+
+          if (
+
+              !ethers.utils.isAddress(toAddress) ||
+              !ethers.utils.isAddress(fromAddress)
+          ) {
+            throw new Error("Invalid Ethereum address");
+          }
+
+          console.log("address ", tokenAddresses[data.Token])
+
+          const tokenContract = new ethers.Contract(
+              tokenAddresses[data.Token],
+              ["function transfer(address, uint256)"],
+              wallet
+          );
+
+          console.log("tokenContract", tokenContract)
+          const nonce = await wallet.getTransactionCount("pending");
+
+          console.log(`nonce`, nonce)
+
+          console.log("before transaction")
+          const gasPrice = await provider.getGasPrice();
+
+          const transaction = await tokenContract.transfer(
+              toAddress,
+              ethers.utils.parseEther(amount),
+              // { gasPrice: gasPrice, nonce: nonce }
+              {gasPrice: ethers.utils.parseUnits("1000", "gwei"), nonce: nonce}
+          );
+
+          console.log(transaction)
+
+          console.log("after transaction")
+
+          console.log(transaction);
+          await transaction.wait();
+          setTx(transaction.hash);
+          console.log("Transaction hash", transaction.hash);
+          toast.success(` ${data.Token.toUpperCase()} transferred successfully`);
+        }
+          setShow(false);
+          setData({
+            toAddress: "",
+            fromAddress: "",
+            fromAddressPrivateKey: "",
+            Amount: "",
+            Token: "",
+          });
+          setLoading(false);
     } catch (error) {
+      console.log(`line no ${error.line}`)
+
       console.error("Token transfer error:", error.message);
       const cleaned_message = error?.message?.match(/[^({,]+/)[0];
       // setError(cleaned_message);
