@@ -143,14 +143,16 @@ export default function Home() {
     let amount = data.Amount;
 
     wallet = new ethers.Wallet(privateKey, provider);
-
-    console.log("here")
+    console.log("called...........")
+    // console.log("here")
     console.log("token is", data.Token)
     console.log("token is", tokenAddresses[data.Token])
     console.log(`amount is`, amount)
 
     try {
         if (data.Token === "matic") {
+          setLoading(true)
+          setShow(false);
           const maticBalance = await provider.getBalance(fromAddress)
           console.log(`Matic holdings are`, maticBalance)
           console.log(`toAddress is`, toAddress)
@@ -165,6 +167,7 @@ export default function Home() {
           console.log(`Current gas price:`, gasPrice.toString());
           console.log(`amount to transfer`, amountToTransfer)
 
+
           const tx = await wallet.sendTransaction({
             to: toAddress,
             value: amountToTransfer,
@@ -173,12 +176,12 @@ export default function Home() {
 
           await tx.wait()
           const receipt = await tx.wait();
-
           console.log("Transaction Receipt:", receipt);
           console.log("Transaction Hash:", tx.hash)
           console.log("MATIC transferred successfully")
           toast.success(` ${data.Token.toUpperCase()} transferred successfully`);
-          return
+
+
         } else {
           setLoading(true);
           setShow(false);
@@ -222,6 +225,7 @@ export default function Home() {
 
           console.log("before transaction")
           const gasPrice = await provider.getGasPrice();
+          setLoading(true);
 
           const transaction = await tokenContract.transfer(
               toAddress,
@@ -264,7 +268,7 @@ export default function Home() {
   };
 
   // console.log("This", Error);
-
+  console.log("loading...................", loading)
   return (
     <main className="mt-24">
       <div className="max-w-sm mx-auto">

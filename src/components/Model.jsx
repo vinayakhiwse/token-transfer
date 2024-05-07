@@ -1,6 +1,7 @@
 import React from "react";
 
 function Model({ handleModel, transferToken, loading }) {
+  console.log("loading", loading)
   return (
     <>
       {loading ? (
